@@ -13,7 +13,11 @@ function HomePage() {
         <p class="max-w-xl mx-auto mt-8 text-base leading-relaxed text-center text-gray-500">
           Leave the guesswork of where you rank in your class to us.
         </p>
-        <Button buttonText={"Login with Google"} buttonFunction={signIn} />
+        <Button
+          buttonText={"Login with Google"}
+          buttonFunction={signIn}
+          margin={"my-4"}
+        />
       </div>
       <BoxLayout
         toggleField={"Show schools"}

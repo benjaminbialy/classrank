@@ -26,6 +26,7 @@ function BoxLayout({
                 key={item.address}
                 text={item.school}
                 address={parentPage + "/" + item.address}
+                margin={"my-4"}
               />
             ))}
           </>
