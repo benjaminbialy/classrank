@@ -1,11 +1,14 @@
 import { useRouter } from "next/router";
-import React, { useEffect, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import TitleTable from "../../../Components/TitleTable";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { database } from "../../../Firebase/config";
 import Button from "../../../Components/Button";
+import UserContext from "../../../Contexts/UserContext";
 
 function school() {
+  const userStatus = useContext(UserContext);
+
   const [status, setStatus] = useState("loading");
   const [schoolDetails, setSchoolDetails] = useState({
     name: "There's supposed to be the name of a school here.",
@@ -46,40 +49,92 @@ function school() {
     }
   };
 
+  const getYearLevel = (index) => {
+    let yearLevelsCopy = [...yearLevels];
+    let yearLevelChanging;
+    for (let i = 0; i < yearLevelsCopy.length; i++) {
+      if (yearLevelsCopy[i]["yearLevel"] === index) {
+        yearLevelChanging = yearLevelsCopy.splice(i, 1);
+        return {
+          yearLevelChanging: yearLevelChanging,
+          yearLevelsCopy: yearLevelsCopy,
+        };
+      }
+    }
+  };
+
   const joinYear = async (index) => {
     // update students array within year level within school
 
-    console.log(index);
-    // await setDoc(doc(database, "school", schoolPath), {
-    //   schoolName: schoolName,
-    //   schoolLocation: schoolLocation,
-    //   schoolPath: schoolPath,
-    //   schoolYearLevels: [...schoolYearLevels],
-    // })
-    //   .then(async () => {
-    //     await setDoc(doc(database, "schools", schoolPath), {
-    //       schoolName: schoolName,
-    //       schoolPath: schoolPath,
-    //     });
-    //   })
-    //   .then(() => {
-    //     alert("School saved");
-    //     setSchoolName("");
-    //     setSchoolImageURL("");
-    //     setSchoolLocation("");
-    //     setSchoolPath("");
-    //     setSchoolYearLevels([
-    //       {
-    //         yearLevel: "",
-    //         subjects: [{ name: "", path: "" }],
-    //         students: [{ name: "", uid: "", picURL: "" }],
-    //       },
-    //     ]);
-    //   })
-    //   .catch((error) => {
-    //     alert("Error saving school");
-    //     console.log(error);
-    //   });
+    if (userStatus.authenticated != "") {
+      let yearLevelData = getYearLevel(index);
+      let yearLevelToChange = yearLevelData.yearLevelChanging[0];
+      let yearLevelsRemaining = yearLevelData.yearLevelsCopy;
+
+      console.log(yearLevelToChange);
+      console.log(yearLevelsRemaining);
+
+      yearLevelToChange.students.push({
+        uid: userStatus.uid,
+        name: userStatus.userName,
+      });
+
+      yearLevelsRemaining.push(yearLevelToChange);
+
+      console.log(yearLevelsRemaining);
+
+      setYearLevels([...yearLevelsRemaining]);
+
+      await setDoc(doc(database, "school", router.query.school), {
+        schoolName: schoolDetails.name,
+        schoolLocation: schoolDetails.location,
+        schoolPath: router.query.school,
+        schoolYearLevels: [...yearLevels],
+      })
+        .then(async () => {
+          // save the students subjects, year levels and schools
+          await setDoc(doc(database, "studentSubjects", userStatus.uid), {
+            uid: userStatus.uid,
+            schools: [
+              {
+                schoolName: "",
+                schoolPath: "",
+                yearLevels: [
+                  {
+                    yearLevel: "",
+                    subjects: [
+                      {
+                        subject: "",
+                        subjectPath: "",
+                      },
+                    ],
+                  },
+                ],
+              },
+            ],
+          });
+        })
+        .then(() => {
+          alert("School saved");
+          setSchoolName("");
+          setSchoolImageURL("");
+          setSchoolLocation("");
+          setSchoolPath("");
+          setSchoolYearLevels([
+            {
+              yearLevel: "",
+              subjects: [{ name: "", path: "" }],
+              students: [{ name: "", uid: "", picURL: "" }],
+            },
+          ]);
+        })
+        .catch((error) => {
+          alert("Error saving school");
+          console.log(error);
+        });
+    } else {
+      alert("Please sign in before trying to join a year level!");
+    }
   };
 
   useEffect(() => {
